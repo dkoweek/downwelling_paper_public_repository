@@ -9,7 +9,6 @@ library(oce)
 library(signal)
 library(magrittr)
 library(cowplot)
-library(ggmap)
 library(viridis)
 
 #Set system clock to avoid Mac OS X / lubridate problems with timestamps
@@ -212,3 +211,8 @@ ggplot2::ggsave(filename = "figures/figure_S3.pdf",
                 height = 6,
                 width = 8,
                 units = "in")
+
+#----Unload_signal_package----
+
+#'signal' package causes conflicts with dplyr::filter, so unload package after completing figure
+detach("package:signal", unload = TRUE)
