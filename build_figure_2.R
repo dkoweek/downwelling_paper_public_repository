@@ -30,7 +30,7 @@ y_breaks = seq(max(y_limits),
 
 #define common colour scale
 palette <- 
-  magma(n = 4,
+  magma(n = 5,
         begin = 0,
         end = 0.8)
 
@@ -70,7 +70,7 @@ S_plot <-
   scale_colour_manual(name = element_blank(),
                       values = palette) +
   scale_x_continuous(name = "Salinity",
-                     limits = c(10,25)) +
+                     limits = c(10,36)) +
   hydrocast_theme
 
 rho_plot <- 
@@ -88,8 +88,8 @@ rho_plot <-
   scale_colour_manual(name = element_blank(),
                       values = palette) +
   scale_x_continuous(name = expression(rho~(kg~m^{-3})),
-                     limits = c(995, 1020),
-                     breaks = seq(995, 1020, by = 5)) +
+                     limits = c(995, 1025),
+                     breaks = seq(995, 1025, by = 10)) +
   hydrocast_theme
 
 O2_plot <- 
@@ -131,12 +131,12 @@ O2_sat_plot <-
 
 top_row <-
   plot_grid(
-  T_plot + theme(legend.position = "none"),
-  S_plot + theme(legend.position = "none"),
-  rho_plot + theme(legend.position = "none"),
-  ncol = 3,
-  align = "hv",
-  labels = "AUTO"
+    T_plot + theme(legend.position = "none"),
+    S_plot + theme(legend.position = "none"),
+    rho_plot + theme(legend.position = "none"),
+    ncol = 3,
+    align = "hv",
+    labels = "AUTO"
   )
 
 bottom_row <- 
@@ -156,12 +156,12 @@ hydrocasts_plot <-
                           c(NA, 2, 2, 2, 2, NA))
   ) %>%
   annotate_figure(bottom = get_legend(
-  O2_plot + theme(
-  legend.title.align = 0.5,
-  legend.direction = "vertical",
-  legend.key.width = unit(0.75, "in"),
-  legend.justification = "center"
-  )
+    O2_plot + theme(
+      legend.title.align = 0.5,
+      legend.direction = "vertical",
+      legend.key.width = unit(0.75, "in"),
+      legend.justification = "center"
+    )
   ))
 
 

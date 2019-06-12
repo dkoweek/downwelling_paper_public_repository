@@ -17,6 +17,7 @@ source("scrape_hypoxia_hydrography.R")
 
 library(viridis)
 library(cowplot)
+library(gridExtra)
 library(ggpubr)
 library(xtable)
 
@@ -96,15 +97,15 @@ names(table.df) <-
   )
 
 parameter_table <- 
-    xtable(table.df,
-           caption = "OTE model parameters and range of values considered",
-    sanitize.text.function = function(x) {
-      x
-    },
-    comment = FALSE,
-    include.rownames = FALSE,
-    floating = TRUE,
-    latex.environments = "center"
+  xtable(table.df,
+         caption = "OTE model parameters and range of values considered",
+         sanitize.text.function = function(x) {
+           x
+         },
+         comment = FALSE,
+         include.rownames = FALSE,
+         floating = TRUE,
+         latex.environments = "center"
   )
 
 
@@ -317,7 +318,7 @@ angle_lake_OTE_plot <-
                                        "Aeration (isothermal compression)",
                                        "Aeration (adiabatic compression)",
                                        "Fountain aeration"))) %>% 
-  filter(Location == "Angle Lake, Washington State, USA") %>% 
+  filter(Location == "Angle Lake, WA, USA") %>% 
   #Plot for all depths except surface level, where downwelling model will give OTE of 0 b/c no O2 gradient present
   filter(Depth > min(Depth)) %>% 
   group_by(Depth, technique) %>% 
@@ -352,8 +353,9 @@ angle_lake_OTE_plot <-
                            1000)) +
   scale_fill_manual(name = element_blank(),
                     values = OTE_colour_scale) +
-  labs(title = "Angle Lake, Washington State, USA") +
-  theme(axis.text = element_text(size = 10), 
+  labs(title = "Angle Lake, WA, USA") +
+  theme(axis.text = element_text(size = 10),
+        axis.text.x = element_text(angle = 45, hjust = 1),
         axis.title = element_text(size = 10),
         plot.title = element_text(face = "plain")) 
 
@@ -370,7 +372,7 @@ beaverdam_OTE_plot <-
                                        "Aeration (isothermal compression)",
                                        "Aeration (adiabatic compression)",
                                        "Fountain aeration"))) %>% 
-  filter(Location == "Beaverdam Reservoir, Virginia, USA") %>% 
+  filter(Location == "Beaverdam Reservoir, VA, USA") %>% 
   #Plot for all depths except surface level, where downwelling model will give OTE of 0 b/c no O2 gradient present
   filter(Depth > min(Depth)) %>% 
   group_by(Depth, technique) %>% 
@@ -405,8 +407,9 @@ beaverdam_OTE_plot <-
                            1000)) +
   scale_fill_manual(name = element_blank(),
                     values = OTE_colour_scale) +
-  labs(title = "Beaverdam Reservoir, Virginia, USA") +
-  theme(axis.text = element_text(size = 10), 
+  labs(title = "Beaverdam Reservoir, VA, USA")+
+  theme(axis.text = element_text(size = 10),
+        axis.text.x = element_text(angle = 45, hjust = 1),
         axis.title = element_text(size = 10),
         plot.title = element_text(face = "plain")) 
 
@@ -459,9 +462,10 @@ baltic_sea_OTE_plot <-
   scale_fill_manual(name = element_blank(),
                     values = OTE_colour_scale) +
   labs(title = "Boknis Eck, Baltic Sea") +
-  theme(axis.text = element_text(size = 10), 
+  theme(axis.text = element_text(size = 10),
+        axis.text.x = element_text(angle = 45, hjust = 1),
         axis.title = element_text(size = 10),
-        plot.title = element_text(face = "plain"))
+        plot.title = element_text(face = "plain")) 
 
 #Chesapeake Bay OTE plot
 chesapeake_bay_OTE_plot <- 
@@ -511,28 +515,99 @@ chesapeake_bay_OTE_plot <-
   scale_fill_manual(name = element_blank(),
                     values = OTE_colour_scale) +
   labs(title = "Chesapeake Bay, USA") +
-  theme(axis.text = element_text(size = 10), 
+  theme(axis.text = element_text(size = 10),
+        axis.text.x = element_text(angle = 45, hjust = 1),
         axis.title = element_text(size = 10),
-        plot.title = element_text(face = "plain"))
+        plot.title = element_text(face = "plain")) 
+
+# northern Gulf of Mexico
+nGOM_OTE_plot <- 
+  #Aggregate results from all oxygenation techniques
+  bind_rows(downwelling_results,
+            subsurface_aeration_results,
+            surface_aeration_results) %>% 
+  #Reorder techniques so that they follow presentation in the paper
+  mutate(technique = factor(technique,
+                            levels = c("Downwelling",
+                                       "Aeration (isothermal compression)",
+                                       "Aeration (adiabatic compression)",
+                                       "Fountain aeration"))) %>% 
+  filter(Location == "Gulf of Mexico") %>% 
+  #Plot for all depths except surface level, where downwelling model will give OTE of 0 b/c no O2 gradient present
+  filter(Depth > min(Depth)) %>% 
+  group_by(Depth, technique) %>% 
+  #Calculate ranges for each technique
+  dplyr::summarize(max_OTE = max(OTE),
+                   min_OTE = min(OTE),
+                   mean_OTE = mean(OTE)) %>% 
+  ungroup() %>% 
+  #Create ribbon plot
+  ggplot() +
+  geom_ribbon(aes(x = Depth,
+                  ymin = min_OTE,
+                  ymax = max_OTE,
+                  fill = technique),
+              alpha = 0.5) +
+  #Flip axes to make depth profile
+  coord_flip() +
+  scale_x_reverse(name = "Depth (m)",
+                  limits = c(25, 0)) +
+  scale_y_log10(name = expression(Oxygen~Transfer~Efficiency~~(kg~~O[2]~~kWh^{-1})),
+                limits = c(10^-6, 10^4),
+                breaks = c(10^c(-6:3)),
+                labels = c(expression(10^{-6}),
+                           "",
+                           expression(10^{-4}),
+                           "",
+                           expression(10^{-2}),
+                           "",
+                           1,
+                           10,
+                           100,
+                           1000)) +
+  scale_fill_manual(name = element_blank(),
+                    values = OTE_colour_scale) +
+  labs(title = "Gulf of Mexico") +
+  theme(axis.text = element_text(size = 10),
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.title = element_text(size = 10),
+        plot.title = element_text(face = "plain")) 
+
 
 
 #----Build_aggregate_figure----
 
 
 #Combine all figure-specific sites and use common legend
-all_sites_OTE_plot <- 
+
+top_row <-
+  plot_grid(
+    baltic_sea_OTE_plot + theme(legend.position = "none"),
+    chesapeake_bay_OTE_plot + theme(legend.position = "none"),
+    nGOM_OTE_plot + theme(legend.position = "none"),
+    ncol = 3,
+    align = "hv",
+    labels = "AUTO"
+  )
+
+bottom_row <- 
   plot_grid(
     angle_lake_OTE_plot + theme(legend.position = "none"),
     beaverdam_OTE_plot + theme(legend.position = "none"),
-    baltic_sea_OTE_plot + theme(legend.position = "none"),
-    chesapeake_bay_OTE_plot + theme(legend.position = "none"),
-    nrow = 2,
     ncol = 2,
     align = "hv",
-    labels = "AUTO"
+    labels = c("D", "E")
+  ) 
+
+all_sites_OTE_plot <- 
+  arrangeGrob(
+    top_row,
+    bottom_row,
+    layout_matrix = rbind(c(1,1,1,1,1,1),
+                          c(NA, 2, 2, 2, 2, NA))
   ) %>%
   annotate_figure(bottom = get_legend(
-    angle_lake_OTE_plot + theme(
+    baltic_sea_OTE_plot + theme(
       legend.title.align = 0.5,
       legend.direction = "vertical",
       legend.key.width = unit(0.75, "in"),
@@ -545,5 +620,5 @@ all_sites_OTE_plot <-
 cowplot::ggsave(filename = "figures/figure_3.pdf",
                 plot = all_sites_OTE_plot,
                 height = 7,
-                width = 8,
+                width = 10,
                 units = "in")
