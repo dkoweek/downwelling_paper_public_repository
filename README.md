@@ -14,6 +14,8 @@ The `data` folder contains data sets from the field experiment and some of the p
 
 This repository contains several supporting scripts, many of which contain custom functions necessary to produce the analyses and figures. Again, these scripts are sourced at the beginning of the appropriate figure script.
 
+Users interested in re-creating the experimental results ($O_2'$) in `Fig. 5` of the paper can run the `Python` script `generate_temporal_interpolations.py`
+
 Some of the schematic figures of the paper (e.g. Figure 1) have been added to the `figures` folder for interested users.
 
 If you have any questions about accessing the material in this repository and/or find an error, please do not hesitate to contact me.
