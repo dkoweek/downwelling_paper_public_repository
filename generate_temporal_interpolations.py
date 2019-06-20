@@ -179,7 +179,7 @@ for _time in [30, 60, 120]:
     #np.savez('munged/deviation_dat.npz',all_deviations=all_deviations,all_pumping=all_pumping,day=l_un_day,sensor=un_sensor_subset)    
 
     # Convert to output
-    all_deviation[all_deviation == 0] = np.nan
+    all_deviations[all_deviations == 0] = np.nan
 
     sensor_angle = []
     sensor_radius = []
@@ -196,7 +196,7 @@ for _time in [30, 60, 120]:
       x_pos.append(np.sin(sensor_angle[-1]*np.pi/180.)*sensor_radius[-1])
       y_pos.append(np.cos(sensor_angle[-1]*np.pi/180.)*sensor_radius[-1])
     
-      print((un_sensor_subset[_n],sensor_radius[-1],sensor_angle[-1],x_pos[-1],y_pos[-1],np.nanmean(all_deviation[_n,:])))
+      print((un_sensor_subset[_n],sensor_radius[-1],sensor_angle[-1],x_pos[-1],y_pos[-1],np.nanmean(all_deviations[_n,:])))
     
     x_pos = np.array(x_pos)
     y_pos = np.array(y_pos)
@@ -209,14 +209,14 @@ for _time in [30, 60, 120]:
     df['y_pos'] = y_pos
     df['mab'] = mab
     dev_day = l_un_day
-    for i in range(all_deviation.shape[1]):
-      df['Day ' + str(dev_day[i]) + ' dev.'] = all_deviation[:,i,0]
-    for i in range(all_deviation.shape[1]):
-      df['Day ' + str(dev_day[i]) + ' dev. hour 1'] = all_deviation[:,i,1]
-    for i in range(all_deviation.shape[1]):
-      df['Day ' + str(dev_day[i]) + ' dev. hour 2'] = all_deviation[:,i,2]
-    for i in range(all_deviation.shape[1]):
-      df['Day ' + str(dev_day[i]) + ' dev. hour 3'] = all_deviation[:,i,3]
+    for i in range(all_deviations.shape[1]):
+      df['Day ' + str(dev_day[i]) + ' dev.'] = all_deviations[:,i,0]
+    for i in range(all_deviations.shape[1]):
+      df['Day ' + str(dev_day[i]) + ' dev. hour 1'] = all_deviations[:,i,1]
+    for i in range(all_deviations.shape[1]):
+      df['Day ' + str(dev_day[i]) + ' dev. hour 2'] = all_deviations[:,i,2]
+    for i in range(all_deviations.shape[1]):
+      df['Day ' + str(dev_day[i]) + ' dev. hour 3'] = all_deviations[:,i,3]
     for i in range(all_pumping.shape[1]):
       df['Day ' + str(dev_day[i]) + ' pumping'] = all_pumping[:,i,0]
     for i in range(all_pumping.shape[1]):
