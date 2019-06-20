@@ -39,6 +39,7 @@ print(un_sensors)
 sensor_radius = np.array([np.array(df['Radius'][val == sensors])[0] for val in un_sensors])
 sensor_mab = np.array([np.array(df['Meters_above_bottom'][val == sensors])[0] for val in un_sensors])
 radius = np.array(df['Radius'])
+angle = np.array(df['Angle_CW_from_N'])
 
 
 oxygen = np.array(df['O2'])
