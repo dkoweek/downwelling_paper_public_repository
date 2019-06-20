@@ -204,11 +204,11 @@ for _time in range(30, 60, 120):
     print((len(x_pos),len(y_pos),len(mab)))
     
     
-    df = pd.DataFrame(data=npzf['sensor'],columns=['Sensor'])
+    df = pd.DataFrame(data=un_sensor_subset,columns=['Sensor'])
     df['x_pos'] = x_pos
     df['y_pos'] = y_pos
     df['mab'] = mab
-    dev_day = npzf['day']
+    dev_day = l_un_day
     for i in range(deviation.shape[1]):
       df['Day ' + str(dev_day[i]) + ' dev.'] = deviation[:,i,0]
     for i in range(deviation.shape[1]):
