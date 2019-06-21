@@ -16,7 +16,6 @@ source("OTE_functions.R")
 #Load additional necessary packages
 library(oce)
 library(cowplot)
-library(gridExtra)
 library(ggpubr)
 library(viridis)
 
@@ -129,45 +128,36 @@ O2_sat_plot <-
 
 #----Combine_individual_plots----
 
-top_row <-
-  plot_grid(
-    T_plot + theme(legend.position = "none"),
-    S_plot + theme(legend.position = "none"),
-    rho_plot + theme(legend.position = "none"),
-    ncol = 3,
-    align = "hv",
-    labels = "AUTO"
-  )
-
-bottom_row <- 
-  plot_grid(
-    O2_plot + theme(legend.position = "none"),
-    O2_sat_plot + theme(legend.position = "none"),
-    ncol = 2,
-    align = "hv",
-    labels = c("D", "E")
-  ) 
-
-hydrocasts_plot <- 
-  arrangeGrob(
-    top_row,
-    bottom_row,
-    layout_matrix = rbind(c(1,1,1,1,1,1),
-                          c(NA, 2, 2, 2, 2, NA))
-  ) %>%
-  annotate_figure(bottom = get_legend(
+#First grab the legend
+legend <- 
+  get_legend(
     O2_plot + theme(
       legend.title.align = 0.5,
       legend.direction = "vertical",
       legend.key.width = unit(0.75, "in"),
       legend.justification = "center"
     )
-  ))
+  ) %>% as_ggplot()
+
+
+#Now combine the panels
+hydrocasts_plot <-
+  plot_grid(
+    T_plot + theme(legend.position = "none"),
+    S_plot + theme(legend.position = "none"),
+    rho_plot + theme(legend.position = "none"),
+    O2_plot + theme(legend.position = "none"),
+    O2_sat_plot + theme(legend.position = "none"),
+    legend,
+    ncol = 3,
+    align = "hv",
+    labels = c("A", "B", "C", "D", "E", "")
+  )
 
 
 #Export plot
 cowplot::ggsave(filename = "figures/figure_2.pdf",
                 plot = hydrocasts_plot,
-                width = 8,
+                width = 10,
                 height = 6,
                 units = "in")

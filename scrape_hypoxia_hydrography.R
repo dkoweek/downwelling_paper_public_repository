@@ -22,10 +22,6 @@ baltic_sea_ds <-
 washington_lakes_ds <- 
   pg_data(doi = "10.1594/PANGAEA.884326")
 
-
-# Data from Chesapeake Bay, Gulf of Mexico, and Virginia Reservoirs not easily accessible via API...
-#... so downloaded onto machine and loaded from machine
-
 chesapeake_bay_hydrocasts <- 
   read_csv(file = "data/Cast_CTD_8.csv")
 
@@ -163,7 +159,7 @@ nGOM_dead_zone_df <-
          O2 = O2_umol_kg,
          Depth = depth) %>% 
   mutate(O2 = O2 / 1e6, #umol/kg -> mol/kg
-         Location = "Gulf of Mexico",
+         Location = "Gulf of Mexico, USA",
          cast_date = parse_date_time(ISO_DateTime_UTC,
                                      "%Y-%m-%d %H:%M:%S") %>% 
            date()) %>% 
@@ -361,7 +357,7 @@ beaverdam_reservoir <-
   virginia_reservoirs_df %>% 
   filter(Reservoir == "BVR",
          cast_date == "2014-06-25 00:00:00") %>% #Manually selected a summer hydrocast from Beaverdam Reservoir that shows clear hypoxia
-  mutate(Location = "Beaverdam Reservoir, VA, USA",
+  mutate(Location = "Beaverdam Res., VA, USA",
          Latitude = beaverdam_reservoir_latitude,
          Longitude = beaverdam_reservoir_longitude ) %>% 
   select(c(Location,
