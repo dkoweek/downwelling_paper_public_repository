@@ -1,4 +1,4 @@
-# Script to build Figure S5 in "Alleviating hypoxia through induced downwelling"
+# Script to build Figure S6 in "Alleviating hypoxia through induced downwelling"
 
 # Build lake overturn figure for oxygenation experiment study
 # Written by David Koweek on 20 March 2019

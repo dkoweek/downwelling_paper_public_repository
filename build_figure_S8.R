@@ -1,4 +1,4 @@
-# Script to build Figure S7 in "Alleviating hypoxia through induced downwelling"
+# Script to build Figure S8 in "Alleviating hypoxia through induced downwelling"
 
 #Script to compile figure of O2 times series data to show raw experimental effect
 #Written by David Koweek 16 May 2019

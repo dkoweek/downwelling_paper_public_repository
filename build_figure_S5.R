@@ -1,4 +1,4 @@
-# Script to build Figure S4 in "Alleviating hypoxia through induced downwelling"
+# Script to build Figure S5 in "Alleviating hypoxia through induced downwelling"
 
 # Script to build figure of stabily stratified lake based on hydrographic profiles collected in July 2018
 # Written by David Koweek on 21 March 2019

@@ -1,4 +1,4 @@
-# Script to build Figure S3 in "Alleviating hypoxia through induced downwelling"
+# Script to build Figure S4 in "Alleviating hypoxia through induced downwelling"
 
 #----Initialize_workspace----
 
