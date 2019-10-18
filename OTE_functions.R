@@ -1,17 +1,46 @@
 # Functions necessary to calculate oxygen transfer efficiency for downwelling, subsurface aeration, and surface aeration
 # Written by David Koweek on 6 February 2019
+# Updated August 2019
 
 
 #----Downwelling_functions----
 
-#Delta~h (pump head height)
-head_height <- function(depth, temperature, salinity, epsilon_p) {
+volume_flow_per_length <- function(rho_0, delta_rho, h_max, delta_rho_h, eta) {
+  
+  g <- 9.81 #m/s^2
+  
+  q_flow <-
+    (rho_0 / (g * delta_rho)) *
+    (
+      ((h_max * g * delta_rho_h) /
+        (rho_0 * (eta ^ 2))) ^
+       (3 / 2)
+      )
+  
+  return(q_flow)
+  
+}
+
+#Unit power (J/kg of seawater pumped)
+unit_power <- function(depth, temperature, salinity, r_to_d, v, h_max_to_d, eta = 2.5, f_D = 0.06, K = 0.25, alpha_pump = 1) {
+  
+  g <- 9.81 #m/s^2
+  
+  #Pipe radius (m)
+  r <- r_to_d * depth
+  
+  #Max plume height above the release point
+  h_max <- h_max_to_d * depth
   
   #Seawater density (kg/m^3)
   rho <-
     oce::swRho(salinity = salinity,
                temperature = temperature,
                pressure = 0)
+  
+  rho_fun <-
+    splinefun(x = depth,
+              y = rho)
   
   #Mean density (kg/m^3)
   rho_bar <-
@@ -27,16 +56,51 @@ head_height <- function(depth, temperature, salinity, epsilon_p) {
     top_n(-1,depth) %>% 
     pull(rho)
   
-  #Calculated head height (m)
-  delta_h <-
-    depth * (
-              (rho_bar / rho_0) -
-               1 +
-               epsilon_p
-             )
-    
-  return(delta_h)
-    
+  #Delta rho between surface and bottom (kg/m^3)
+  delta_rho <- 
+    rho - rho_0
+  
+  #Delta rho between surface and maximum height of the plume (kg/m^3)
+  delta_rho_h <- 
+    rho_fun(depth - h_max) - 
+    rho_0
+  
+  #Delta_rho_h is undefined when the plume rises shallower than the first depth observation
+  delta_rho_h[which((depth - h_max < depth[1]) == TRUE)] <- NA
+  
+  #Flow per unit length (m^2/s)
+  q_flow <- 
+    volume_flow_per_length(rho_0 = rho_0,
+                           delta_rho = delta_rho,
+                           h_max = h_max,
+                           delta_rho_h = delta_rho_h,
+                           eta = eta)
+  
+  
+  #Unit power (J/kg)
+  #Break equation into terms to prevent onion function
+  A <- 
+    0.5 * v^2
+  
+  B <-
+    (1 +
+       (
+         (f_D / 2) * 
+           (
+             ((pi * r * v) / q_flow) +
+               (depth / r)
+           )
+       ) +
+       K)
+  
+  C <-
+    g * depth * ((rho_bar / rho_0) - 1)
+  
+  E_kg <- 
+    (1 / alpha_pump) * ((A * B) + C)
+  
+  return(E_kg)
+  
 }
 
 #Oxygen gradient between the surface and release point
@@ -51,7 +115,7 @@ delta_O2_pump <- function(depth, O2) {
     top_n(-1, depth) %>% 
     pull(O2)
   
-  delta_O2_pump <- 
+  delta_O2_pump <- #mol/kg O2
     O2_0 - O2
   
   return(delta_O2_pump)
@@ -59,7 +123,7 @@ delta_O2_pump <- function(depth, O2) {
 }
 
 #Oxygen transfer efficiency of downwelling
-OTE_downwelling <- function(depth, temperature, salinity, O2, epsilon_p = 0, alpha_pump = 1) {
+OTE_downwelling <- function(depth, temperature, salinity, O2, r_to_d, v, h_max_to_d, eta = 2.5, f_D = 0.06, K = 0.25, alpha_pump = 1) {
   
   #Define constant values
   g <- 9.81 #gravitational constant (m/s^2)
@@ -68,19 +132,24 @@ OTE_downwelling <- function(depth, temperature, salinity, O2, epsilon_p = 0, alp
   
   J_to_kWh <- 3.6e6 #Joules per kWh
   
-  dh <- #m
-    head_height(depth = depth,
-                temperature = temperature,
-                salinity = salinity,
-                epsilon_p = epsilon_p)
+  joules_kg_seawater <- #Energy expenditure to pump seawater (J/kg)
+    unit_power(depth = depth,
+               temperature = temperature,
+               salinity = salinity,
+               r_to_d = r_to_d,
+               v = v,
+               h_max_to_d = h_max_to_d,
+               eta = eta,
+               f_D = f_D,
+               K = K,
+               alpha_pump = alpha_pump)
   
   dO2 <- #mol/kg
     delta_O2_pump(depth = depth,
                   O2 = O2)
   
   OTE <- #mol O2/J
-    (alpha_pump * dO2) /
-    (g * dh)
+    dO2 / joules_kg_seawater
   
   OTE <- #kg O2/kWh
     OTE * 
@@ -248,17 +317,17 @@ O2_deficit <- function(temperature, salinity, O2) {
 }
 
 #Mass transfer rate constant
-k_rate <- function(v) {
+k_rate <- function(v_f) {
   A <- 2e-4 #s/m^2
   
   k <- #s^-1
-    A * v^2 
+    A * v_f^2 
   
   return(k)
   
 }
 
-delta_O2_fountain <- function(depth, temperature, salinity, O2, v, phi) {
+delta_O2_fountain <- function(depth, temperature, salinity, O2, v_f, phi) {
   
   #Define constant values
   g <- 9.81 #gravitational constant (m/s^2)
@@ -272,18 +341,18 @@ delta_O2_fountain <- function(depth, temperature, salinity, O2, v, phi) {
                O2 = O2)
 
   k <- #s^-1
-    k_rate(v)
+    k_rate(v_f)
   
   delta_O2 <- 
     O2_prime *
-    (exp((-2 * k * v * sin(phi)) / g) - 1)
+    (exp((-2 * k * v_f * sin(phi)) / g) - 1)
   
   return(delta_O2)
   
   
 }
 
-OTE_fountain <- function(depth, temperature, salinity, O2, v, phi = 60, alpha_pump = 1, epsilon_f = 6) {
+OTE_fountain <- function(depth, temperature, salinity, O2, v_f, phi = 60, alpha_pump = 1, epsilon_f = 6) {
   
   #Define constant values
   g <- 9.81 #gravitational constant (m/s^2)
@@ -297,13 +366,13 @@ OTE_fountain <- function(depth, temperature, salinity, O2, v, phi = 60, alpha_pu
                       temperature = temperature,
                       salinity = salinity,
                       O2 = O2,
-                      v = v,
+                      v_f = v_f,
                       phi = phi)
   
-  J_per_kg <- #Power per kg of water
+  J_per_kg <- #Energy per kg of water
     (depth * g) + 
       (
-        (v^2 /2) *
+        (v_f^2 /2) *
          (epsilon_f + 1)
        )
   

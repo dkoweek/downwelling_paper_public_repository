@@ -6,21 +6,29 @@
 #Load necessary packages
 library(tidyverse)
 library(lubridate)
-library(pangaear)
 library(oce)
 
 #Set system clock to avoid Mac OS X / lubridate problems with timestamps
 Sys.setenv(TZ = "America/Los_Angeles")
 
-#Clear the cache of any Pangaea data sets
-pg_cache_clear(prompt = FALSE)
-
 #----Load_data_sets----
 baltic_sea_ds <- 
-  pg_data(doi = "10.1594/PANGAEA.871890")
+  read_delim(
+    "data/boknis-eck_ch4-2012-2014.tab",
+    "\t",
+    escape_double = FALSE,
+    trim_ws = TRUE,
+    skip = 23
+  )
 
 washington_lakes_ds <- 
-  pg_data(doi = "10.1594/PANGAEA.884326")
+  read_delim(
+    "data/PugetSound_lowl_As-water.tab",
+    "\t",
+    escape_double = FALSE,
+    trim_ws = TRUE,
+    skip = 21
+  )
 
 chesapeake_bay_hydrocasts <- 
   read_csv(file = "data/Cast_CTD_8.csv")
@@ -28,32 +36,32 @@ chesapeake_bay_hydrocasts <-
 virginia_reservoirs <- 
   read_csv(file = "data/CTD_Meta_13_18_final.csv",
            col_types =c(
-             col_character(),
-             col_character(),
-             col_character(),
-             col_double(),
-             col_double(),
-             col_double(),
-             col_double(),
-             col_double(),
-             col_double(),
-             col_double(),
-             col_double(),
-             col_double(),
-             col_double(),
-             col_double(),
-             col_double(),
-             col_double(),
-             col_double(),
-             col_double(),
-             col_double(),
-             col_double(),
-             col_double(),
-             col_double(),
-             col_double(),
-             col_double()
-           )
-  ) %>% 
+                        col_character(),
+                        col_character(),
+                        col_character(),
+                        col_double(),
+                        col_double(),
+                        col_double(),
+                        col_double(),
+                        col_double(),
+                        col_double(),
+                        col_double(),
+                        col_double(),
+                        col_double(),
+                        col_double(),
+                        col_double(),
+                        col_double(),
+                        col_double(),
+                        col_double(),
+                        col_double(),
+                        col_double(),
+                        col_double(),
+                        col_double(),
+                        col_double(),
+                        col_double(),
+                        col_double()
+                        )
+           ) %>% 
   tbl_df()
 
 nGOM_dead_zone_ds <- 
@@ -75,11 +83,11 @@ O2_MM <- 32 #molar mass of O2 (g)
 
 
 # Baltic Sea
-baltic_sea_latitude <- 54.529500 #Lat/Long info extracted from data web page
-baltic_sea_longitude <- 10.039330
+  baltic_sea_latitude <- 54.529500 #Lat/Long info extracted from data web page
+  baltic_sea_longitude <- 10.039330
 
 baltic_sea_df <- 
-  baltic_sea_ds[[1]]$data %>% 
+  baltic_sea_ds %>% 
   mutate(datetime = parse_date_time(`Date/Time`, "%Y-%m-%d %H:%M:%S"),
          cast_date = date(datetime), #Extract date of each cast as a cast ID
          Latitude = baltic_sea_latitude,
@@ -93,12 +101,11 @@ baltic_sea_df <-
                      temperature = Temperature,
                      pressure = 0),
          O2 = O2 / (rho / 1000) *1e-6) #umol/L -> mol/kg
-
+         
 
 # Lakes in Washington State
 washington_lakes_df <- 
-  washington_lakes_ds[[1]]$data %>% 
-  mutate(cast_date = parse_date(`Date/Time`, "%Y-%m-%d")) %>% 
+  washington_lakes_ds %>% 
   rename(Depth = `Depth water [m]`,
          Temperature = `Temp [°C]`,
          O2 = `O2 [µmol/l]`) %>% 
@@ -162,7 +169,7 @@ nGOM_dead_zone_df <-
          Location = "Gulf of Mexico, USA",
          cast_date = parse_date_time(ISO_DateTime_UTC,
                                      "%Y-%m-%d %H:%M:%S") %>% 
-           date()) %>% 
+                      date()) %>% 
   #Average upcast and downcast
   group_by(Depth) %>% 
   summarize(Location = Location[1],
@@ -173,8 +180,8 @@ nGOM_dead_zone_df <-
             Salinity = mean(Salinity, na.rm = TRUE),
             O2 = mean(O2, na.rm = TRUE)) %>% 
   ungroup()
-
-
+  
+         
 
 #----Select_hydrocasts_and_merge_data_sets----
 
@@ -192,27 +199,27 @@ baltic_sea <-
            Temperature, 
            Salinity, 
            O2)
-  )
+         )
 
-#Depth interpolate the Baltic Sea data set 
-depth_interp <- seq(min(baltic_sea$Depth), 
-                    max(baltic_sea$Depth), 
-                    by = depth_interp_interval)
-
-O2_interp <- 
-  approx(x = baltic_sea$Depth,
-         y = baltic_sea$O2,
-         xout = depth_interp)$y
-
-Temperature_interp <- 
-  approx(x = baltic_sea$Depth,
-         y = baltic_sea$Temperature,
-         xout = depth_interp)$y
-
-Salinity_interp <- 
-  approx(x = baltic_sea$Depth,
-         y = baltic_sea$Salinity,
-         xout = depth_interp)$y
+    #Depth interpolate the Baltic Sea data set 
+    depth_interp <- seq(min(baltic_sea$Depth), 
+                        max(baltic_sea$Depth), 
+                        by = depth_interp_interval)
+    
+    O2_interp <- 
+      approx(x = baltic_sea$Depth,
+             y = baltic_sea$O2,
+             xout = depth_interp)$y
+    
+    Temperature_interp <- 
+      approx(x = baltic_sea$Depth,
+             y = baltic_sea$Temperature,
+             xout = depth_interp)$y
+    
+    Salinity_interp <- 
+      approx(x = baltic_sea$Depth,
+             y = baltic_sea$Salinity,
+             xout = depth_interp)$y
 
 baltic_sea <- 
   data.frame(
@@ -240,8 +247,9 @@ baltic_sea <-
 angle_lake <- 
   washington_lakes_df %>% 
   filter(Event == "Angle_Lake",
-         cast_date == "2016-07-12 00:00:00") %>%
-  mutate(Location = "Angle Lake, WA, USA") %>% 
+         `Date/Time` == "2016-07-12") %>%
+  mutate(Location = "Angle Lake, WA, USA",
+         cast_date = `Date/Time`) %>% 
   select(c(Location,
            Latitude, 
            Longitude, 
@@ -252,25 +260,25 @@ angle_lake <-
            O2)
   )
 
-#Depth interpolate the Angle Lake data set 
-depth_interp <- seq(min(angle_lake$Depth), 
-                    max(angle_lake$Depth), 
-                    by = depth_interp_interval)
-
-O2_interp <- 
-  approx(x = angle_lake$Depth,
-         y = angle_lake$O2,
-         xout = depth_interp)$y
-
-Temperature_interp <- 
-  approx(x = angle_lake$Depth,
-         y = angle_lake$Temperature,
-         xout = depth_interp)$y
-
-Salinity_interp <- 
-  approx(x = angle_lake$Depth,
-         y = angle_lake$Salinity,
-         xout = depth_interp)$y
+    #Depth interpolate the Angle Lake data set 
+    depth_interp <- seq(min(angle_lake$Depth), 
+                        max(angle_lake$Depth), 
+                        by = depth_interp_interval)
+    
+    O2_interp <- 
+      approx(x = angle_lake$Depth,
+             y = angle_lake$O2,
+             xout = depth_interp)$y
+    
+    Temperature_interp <- 
+      approx(x = angle_lake$Depth,
+             y = angle_lake$Temperature,
+             xout = depth_interp)$y
+    
+    Salinity_interp <- 
+      approx(x = angle_lake$Depth,
+             y = angle_lake$Salinity,
+             xout = depth_interp)$y
 
 angle_lake <- 
   data.frame(
@@ -350,9 +358,9 @@ chesapeake_bay <-
 
 
 #Beaverdam Reservoir, Virginia, USA
-beaverdam_reservoir_latitude <- 37.322865
-beaverdam_reservoir_longitude <- -79.824834
-
+      beaverdam_reservoir_latitude <- 37.322865
+      beaverdam_reservoir_longitude <- -79.824834
+      
 beaverdam_reservoir <- 
   virginia_reservoirs_df %>% 
   filter(Reservoir == "BVR",
@@ -360,36 +368,36 @@ beaverdam_reservoir <-
   mutate(Location = "Beaverdam Res., VA, USA",
          Latitude = beaverdam_reservoir_latitude,
          Longitude = beaverdam_reservoir_longitude ) %>% 
-  select(c(Location,
-           Latitude, 
-           Longitude, 
-           cast_date, 
-           Depth, 
-           Temperature, 
-           Salinity, 
-           O2)
-  ) 
+    select(c(Location,
+             Latitude, 
+             Longitude, 
+             cast_date, 
+             Depth, 
+             Temperature, 
+             Salinity, 
+             O2)
+    ) 
 
 #Depth interpolate the Beaverdam Reservoir data set 
-depth_interp <- seq(min(beaverdam_reservoir$Depth), 
-                    max(beaverdam_reservoir$Depth), 
-                    by = depth_interp_interval)
-
-O2_interp <- 
-  approx(x = beaverdam_reservoir$Depth,
-         y = beaverdam_reservoir$O2,
-         xout = depth_interp)$y
-
-Temperature_interp <- 
-  approx(x = beaverdam_reservoir$Depth,
-         y = beaverdam_reservoir$Temperature,
-         xout = depth_interp)$y
-
-Salinity_interp <- 
-  approx(x = beaverdam_reservoir$Depth,
-         y = beaverdam_reservoir$Salinity,
-         xout = depth_interp)$y
-
+    depth_interp <- seq(min(beaverdam_reservoir$Depth), 
+                        max(beaverdam_reservoir$Depth), 
+                        by = depth_interp_interval)
+    
+    O2_interp <- 
+      approx(x = beaverdam_reservoir$Depth,
+             y = beaverdam_reservoir$O2,
+             xout = depth_interp)$y
+    
+    Temperature_interp <- 
+      approx(x = beaverdam_reservoir$Depth,
+             y = beaverdam_reservoir$Temperature,
+             xout = depth_interp)$y
+    
+    Salinity_interp <- 
+      approx(x = beaverdam_reservoir$Depth,
+             y = beaverdam_reservoir$Salinity,
+             xout = depth_interp)$y
+    
 beaverdam_reservoir <- 
   data.frame(
     Depth = depth_interp,

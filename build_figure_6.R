@@ -64,7 +64,7 @@ ICs <- grid
 ICs[pipe_location] <- O2_input
 ICs[outside_locations] <- O2_initial
 
-#----Set_timescales
+#----Set_timescales----
 pumping_duration <- 3 #hrs
 times <- seq(0, 3600 * pumping_duration, by = 60) #seconds
 

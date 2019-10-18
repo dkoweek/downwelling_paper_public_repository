@@ -1,103 +1,218 @@
 # Script to build Figure S5 in "Alleviating hypoxia through induced downwelling"
 
-# Script to build figure of stabily stratified lake based on hydrographic profiles collected in July 2018
-# Written by David Koweek on 21 March 2019
+#----Initialize_workspace----
 
-#----Initialize-workspace----
-
-#Load necessary packages
+#Load packages
 library(tidyverse)
 library(lubridate)
-library(viridis)
-library(scales)
+library(oce)
+library(signal)
+library(magrittr)
 library(cowplot)
+library(viridis)
 
 #Set system clock to avoid Mac OS X / lubridate problems with timestamps
 Sys.setenv(TZ = "America/Los_Angeles")
 
-#Load custom functions to unpack MiniDOT data
-source("downwelling_field_study_functions.R")
+#----Load_ADP_data----
 
-#----Load_MiniDOT_data----
+#Note: 'nf' stands for "near field" (i.e. in the vicinity of the field experiment)
+adp_nf <-
+  read.aquadoppProfiler(file = "data/JRBPNF02.PRF",
+                        tz = "UTC",
+                        orientation = "upward")
 
-minidot_files <- list.files(path = "data/",
-                            pattern = "Cat",
-                            full.names = TRUE)
-minidot_data <- list()
+#----ADP_diagnostics----
 
-for (i in 1:length(minidot_files)) {
-  minidot_data[[i]] <- 
-    read_minidot(minidot_files[i])
+#First, check the temperature readings
+adp_temp_plot_nf <-
+  plot(adp_nf,
+       which="temperature")
+
+# Ok temperatures seem envrionmentally realistic. Let's check instrument heading/pitch/roll
+adp_position_nf <-
+  plot(adp_nf,
+       which=16:18)
+
+#Instrument appears to remain stable and flat facing upward based on the pitch and roll time series...
+#....for both instruments. It seems that there may have been a small shift in the NF pitch and roll...
+#...~ 1800 on 24 September 2018. This period of time corresponds with the deployment of the 5-meter radius sensors.
+# We had temporarily deployed a sensor at 5m, 180 degrees befor realizing that the sensor was near the ADP. 
+# It appears that we may have actually hit the ADP during the initial deployment. Monitor processed data for discontinuities around this time period.
+
+#Depth records show slight decline due to decline in lake level
+
+adp_depth_plot_nf <-
+  plot(adp_nf,
+       which = "pressure")
+
+#----Rotate_ADP_data_from_XYZ_to_ENU----
+adp_nf_ENU <- xyzToEnuAdp(adp_nf)
+
+#----Filter_ADP_data----
+
+#Set up filtering coefficients
+butter_coefs <- butter(2,0.1)
+
+a <- butter_coefs$a
+b <- butter_coefs$b
+
+#Pre-allocate array for filtered data
+v_filt_nf <- array(dim = dim(adp_nf_ENU[["v"]]))
+
+#Establish depth bins
+depth_bins_nf <- dim(adp_nf_ENU[["v"]])[2]
+
+for (i in 1:3) { #east, north, and up
+  for (j in 1:depth_bins_nf) { #for each depth bin
+    
+    velocity_vector <- adp_nf_ENU[["v"]][,j,i]
+    
+    v_filt_nf[,j,i] <- oce.filter(velocity_vector, 
+                                  a, 
+                                  b, 
+                                  zero.phase = TRUE)
+    
+  }
 }
 
-#Wrangle individual files into single cleaned data frame
-minidots <- 
-  plyr::ldply(minidot_data,
-        data.frame) %>%
-  mutate(local_datetime =  with_tz(Coordinated.Universal.Time,
-                                   tzone = "America/Los_Angeles")) %>% 
-  filter(local_datetime > ymd_hms("2018-07-05 12:45:00", 
-                                  tz = "America/Los_Angeles"),
-         local_datetime < ymd_hms("2018-07-11 10:30:00",
-                                  tz = "America/Los_Angeles")) %>% 
-  tbl_df()
+#Copy data object
+adp_nf_ENU_filtered <- 
+  adp_nf_ENU
 
-#----Plot_MiniDOT_data----
+#Append filtered array
+adp_nf_ENU_filtered[["v"]] <- 
+  v_filt_nf
 
-#Temperature time series
-minidot_temperature_plot <- 
-  minidots %>% 
+#----Diagnostic_plot_of_filtered_data----
+
+par(mfrow=c(3,1))
+
+#East
+plot(adp_nf_ENU_filtered,
+     which = 1)
+lines(adp_nf_ENU_filtered[["time"]],
+      adp_nf_ENU_filtered[["pressure"]])
+
+#North
+plot(adp_nf_ENU_filtered,
+     which = 2)
+lines(adp_nf_ENU_filtered[["time"]],
+      adp_nf_ENU_filtered[["pressure"]])
+
+#Up
+plot(adp_nf_ENU_filtered,
+     which = 3)
+lines(adp_nf_ENU_filtered[["time"]],
+      adp_nf_ENU_filtered[["pressure"]])
+
+#----Wrangle_to_data_frames----
+
+#Trim the data to between 0.75 mab and 2.5 mab
+depth_lb <- 0.75
+depth_ub <- 2.5
+
+adp_nf_e <- adp_nf_ENU_filtered[["v"]][,,1] 
+adp_nf_n <- adp_nf_ENU_filtered[["v"]][,,2]
+adp_nf_up <- adp_nf_ENU_filtered[["v"]][,,3]
+
+adp_nf_e <- as_tibble(adp_nf_e)  
+adp_nf_n <- as_tibble(adp_nf_n)
+adp_nf_up <- as_tibble(adp_nf_up)
+
+names(adp_nf_e) <- adp_nf_ENU_filtered[["distance"]]
+names(adp_nf_n) <- adp_nf_ENU_filtered[["distance"]]
+names(adp_nf_up) <- adp_nf_ENU_filtered[["distance"]]
+
+time_nf <- adp_nf_ENU_filtered[["time"]]
+filtered_ssh_nf <- oce::oce.filter(adp_nf_ENU_filtered[["pressure"]], 
+                                   a, 
+                                   b, 
+                                   zero.phase = TRUE)
+
+adp_nf_e <- 
+  adp_nf_e %>% 
+  gather(depth,
+         velocity) %>% 
+  group_by(depth) %>% 
+  mutate(timestamp = time_nf) %>% 
+  ungroup() %>% 
+  mutate(depth = as.numeric(depth)) %>% 
+  mutate(direction = "East")
+
+adp_nf_n <- 
+  adp_nf_n %>% 
+  gather(depth,
+         velocity) %>% 
+  group_by(depth) %>% 
+  mutate(timestamp = time_nf) %>% 
+  ungroup() %>% 
+  mutate(depth = as.numeric(depth)) %>% 
+  mutate(direction = "North")
+
+adp_nf_up <- 
+  adp_nf_up %>% 
+  gather(depth,
+         velocity) %>% 
+  group_by(depth) %>% 
+  mutate(timestamp = time_nf) %>% 
+  ungroup() %>% 
+  mutate(depth = as.numeric(depth)) %>% 
+  mutate(direction = "Vertical")
+
+adp_nf_all <- 
+  bind_rows(adp_nf_e,
+            adp_nf_n,
+            adp_nf_up) %>%
+  group_by(timestamp) %>% 
+  nest() %>% 
+  mutate(ssh = filtered_ssh_nf) %>% 
+  unnest()
+
+adp_nf <-
+  adp_nf_all %>%
+  dplyr::filter(depth >= depth_lb, #depth cut-offs
+                depth <= depth_ub,
+                timestamp %within% interval(ymd_hms("2018-09-02 02:30:00"),
+                                            ymd_hms("2018-10-04 20:30:00")))
+
+#----Generate_the_ADP_plot----
+
+adp_nf_plot <-
+  adp_nf %>%
+  #Time of start of experiment and end of experiment
+  dplyr::filter(timestamp > ymd_hms("2018-09-15 00:00:00"),
+                timestamp < ymd_hms("2018-10-04 16:30:00")) %>%
+  dplyr::mutate(local_datetime = with_tz(timestamp,
+                                         tzone = "America/Los_Angeles")) %>% 
   ggplot(aes(x = local_datetime,
-             y = Temperature)) +
-  geom_line(aes(colour = serial_number)) +
-  #Set scale details
-  scale_colour_viridis(name = element_blank(), 
-                       labels = c("2 mab", "0.5 mab", "0 mab"), #checked that serial numbers align to these depths
-                       discrete = TRUE,
-                       option = "C",
-                       direction = -1) +
-  scale_y_continuous(name = expression(Temperature~(degree~C)),
-                     limits = c(21, 25)) +
+             y = depth)) +
+  geom_raster(aes(fill = velocity)) +
+  scale_fill_gradient2(name = expression(paste("u,v,w",~(m~~s^{-1}))),
+                       limits = c(-0.05, 0.05),
+                       midpoint = 0,
+                       mid = "white",
+                       high = "red",
+                       low = "blue") +
   scale_x_datetime(name = element_blank(),
-                   date_labels = "%b %d",
-                   date_breaks = "1 day") +
-  #Set plot details
-  theme_bw() +
-  theme(axis.text.x = element_text(angle = -45))
+                   date_breaks = "3 days",
+                   date_labels = "%b %d") +
+  labs(y = "Meters Above Bottom",
+       title = "Acoustic Doppler Profiler Velocity Measurements")  +
+  geom_line(aes(y = ssh),
+            colour = "black") +
+  theme(axis.text.x = element_text(angle = -45)) +
+  facet_grid(direction~.)
 
-#O2 time series
-minidot_O2_plot <- 
-  minidots %>% 
-  ggplot(aes(x = local_datetime,
-             y = Dissolved.Oxygen)) +
-  geom_line(aes(colour = serial_number)) +
-  #Set scale details
-  scale_colour_viridis(name = element_blank(), 
-                       labels = c("2 mab", "0.5 mab", "0 mab"), #checked that serial numbers align to these depths
-                       discrete = TRUE,
-                       option = "C",
-                       direction = -1) +
-  scale_y_continuous(name = expression(O[2]~(mg~L^{-1}))) +
-  scale_x_datetime(name = element_blank(),
-                   date_labels = "%b %d",
-                   date_breaks = "1 day") +
-  #Set plot details
-  theme_bw() +
-  theme(axis.text.x = element_text(angle = -45))
-
-july_2018_hydrography_plot <- 
-  plot_grid(minidot_temperature_plot,
-            minidot_O2_plot,
-            nrow = 2,
-            align = "hv",
-            labels = "AUTO")
-
-#----Export-plot----
-
-cowplot::ggsave(filename = "figures/figure_S5.pdf",
-                plot = july_2018_hydrography_plot,
+#Export figure
+ggplot2::ggsave(filename = "figures/figure_S5.pdf",
+                plot = adp_nf_plot,
                 device = "pdf",
-                width = 8,
                 height = 6,
+                width = 8,
                 units = "in")
 
+#----Unload_signal_package----
+
+#'signal' package causes conflicts with dplyr::filter, so unload package after completing figure
+detach("package:signal", unload = TRUE)
