@@ -1,6 +1,6 @@
 This is the public data repository for:
 
-*Alleviating hypoxia through induced downwelling* (final citation to be updated after manuscript acceptance)
+*Evaluating hypoxia alleviation through induced downwelling* (final citation to be updated after manuscript acceptance)
 
 You can use this repository to reproduce any of the analyses in the paper. The analyses necessary to produce each figure are contained in the script under that figure's name. For instance, to reproduce figure 6 in the paper, simply run:
 
