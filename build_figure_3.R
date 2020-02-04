@@ -109,9 +109,10 @@ for (i in 1:length(sites)) {
                       values = OTE_colour_scale) +
     scale_colour_manual(values = OTE_colour_scale) +
     labs(title = sites[i]) +
-    theme(axis.text = element_text(size = 10),
+    theme(axis.text = element_text(size = 13),
           axis.text.x = element_text(angle = 45, hjust = 1),
-          axis.title = element_text(size = 10),
+          axis.title.x = element_text(size = 10),
+          axis.title.y = element_text(size = 14), 
           plot.title = element_text(face = "plain"))
   
 }
@@ -164,11 +165,11 @@ all_sites_OTE_plot_log_scale <-
 cowplot::ggsave(filename = "figures/figure_3.pdf",
                 plot = all_sites_OTE_plot,
                 height = 6.5,
-                width = 9.5,
+                width = 9.75,
                 units = "in")
 
 cowplot::ggsave(filename = "figures/figure_S1.pdf",
                 plot = all_sites_OTE_plot_log_scale,
                 height = 6.5,
-                width = 9.5,
+                width = 9.75,
                 units = "in")

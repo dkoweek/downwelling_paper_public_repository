@@ -34,9 +34,9 @@ palette <-
         end = 0.8)
 
 hydrocast_theme <- 
-  theme(axis.text = element_text(size = 10,
+  theme(axis.text = element_text(size = 14,
                                  family = "Helvetica"),
-        axis.title = element_text(size = 12,
+        axis.title = element_text(size = 14,
                                   family = "Helvetica"),
         axis.text.x = element_text(angle = -45))
 
