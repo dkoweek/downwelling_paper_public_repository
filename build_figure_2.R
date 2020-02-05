@@ -126,6 +126,54 @@ O2_sat_plot <-
   scale_x_continuous(name = expression(paste(O[2], " (% saturation)", sep= ""))) +
   hydrocast_theme
 
+#----Build_map_of_hydrocasts----
+
+locations_df <- 
+  hydrocasts_df %>% 
+  group_by(Location) %>% 
+  summarize(Lat = mean(Latitude, na.rm = TRUE),
+            Long = mean(Longitude, na.rm = TRUE))
+
+#Plot world map
+world_map <- 
+  map_data("world")
+
+map <- 
+  ggplot() + 
+  coord_fixed() +
+  geom_polygon(data = world_map,
+               aes(x = long,
+                   y = lat,
+                   group = group),
+               fill = "grey") +
+  geom_point(data = locations_df,
+             aes(x = Long,
+                 y = Lat,
+                 colour = Location),
+             size = 3) +
+  scale_colour_manual(name = element_blank(),
+                      values = palette,
+                      labels = c(expression(atop("Angle Lake, WA, USA",
+                                                 paste("(47.42750",degree,"N, -122.28710",degree,"E)"))), 
+                                 expression(atop("Beaverdam Res., VA, USA",
+                                                 paste("(37.32287",degree,"N, -79.82483",degree,"E)"))),
+                                 expression(atop("Boknis Eck, Baltic Sea",
+                                                 paste("(54.52950",degree,"N, 10.03933",degree,"E)"))),
+                                 expression(atop("Chesapeake Bay, USA",
+                                                 paste("(38.97567",degree,"N, -76.36850",degree,"E)"))),
+                                 expression(atop("Gulf of Mexico, USA",
+                                                 paste("(28.90420",degree,"N, -90.30150",degree,"E)"))))) +
+  scale_x_continuous(name = expression(Longitude~(degree~East))) +
+  scale_y_continuous(name = expression(Latitude~(degree~North))) +
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(), 
+        panel.background = element_rect(fill = 'white',
+                                        colour = 'white'),
+        legend.key.size = unit(1.5, "cm"))
+
+
+
+
 #----Combine_individual_plots----
 
 #First grab the legend
@@ -154,10 +202,17 @@ hydrocasts_plot <-
     labels = c("A", "B", "C", "D", "E", "")
   )
 
+hydrocasts_figure <- 
+  plot_grid(
+    hydrocasts_plot,
+    map,
+    nrow = 2,
+    rel_heights = c(2,1)
+  )
 
 #Export plot
 cowplot::ggsave(filename = "figures/figure_2.pdf",
-                plot = hydrocasts_plot,
-                width = 10,
-                height = 6,
+                plot = hydrocasts_figure,
+                width = 10.5,
+                height = 10,
                 units = "in")
