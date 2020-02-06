@@ -63,6 +63,7 @@ downwelling_scaled_df <-
          OTE_molar = Var2) %>% 
   mutate(V = 10^log_V, #m^3
          unit_power = R_O2_depth_avg / OTE_molar, #kW/m^3
+         unit_cost = (unit_power * m3_per_km3 / 1000) * USD_MWh, # kW/m^3 * m^3/km^3 * MW/kW * USD/MW*h = USD/km^3*h
          power = unit_power * V,  #kW
          power = power / 1000 #MW
         ) 
