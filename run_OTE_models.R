@@ -63,7 +63,7 @@ parameter <-
     "$v$",
     "$\\eta$",
     "$\\frac{h_{max}}{d}$",
-    "$K_{90}$",
+    "$K$",
     "$\\alpha_p$",
     "$\\alpha_{air}$",
     "$\\phi$",
@@ -72,10 +72,10 @@ parameter <-
   )
 
 parameter_description <- 
-  c("Pipe radius relative to depth of release (m m$^{-1}$)",
+  c("Pipe radius : depth of release (m m$^{-1}$)",
     "Downwelling water velocity (m s$^{-1}$)",
     "Plume entrainment coefficient",
-    "Maximum plume height relative to depth of release (m m$^{-1}$)",
+    "Maximum plume height : depth of release (m m$^{-1}$)",
     "Minor losses due to pipe bend",
     "Water pump efficiency (\\%)",
     "Air compressor efficiency (\\%)",
