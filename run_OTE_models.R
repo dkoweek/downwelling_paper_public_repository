@@ -10,6 +10,7 @@ source("scrape_hypoxia_hydrography.R")
 
 #Load necessary libraries
 library(xtable)
+library(tools)
 
 #----Define_model_parameter_space----
 
@@ -67,7 +68,7 @@ parameter <-
     "$\\alpha_{air}$",
     "$\\phi$",
     "$\\epsilon_f$",
-    "$\\v_f$"
+    "$v_f$"
   )
 
 parameter_description <- 
@@ -83,17 +84,29 @@ parameter_description <-
     "Ejection velocity of fountain (m s$^{-1}$)"
   )
 
+technique <- 
+  c("D",
+    "D",
+    "D",
+    "D",
+    "D",
+    "D,F",
+    "I,A",
+    "F",
+    "F",
+    "F")
+
 parameter_range <-
-  c(paste(min(r_to_d),"-",max(r_to_d)),
-    paste(min(v),"-",max(v)),
-    paste(min(eta),"-",max(eta)),
-    paste(min(h_max_to_d),"-",max(h_max_to_d)),
-    paste(min(K),"-",max(K)),
-    paste(min(alpha_pump),"-",max(alpha_pump)),
-    paste(min(alpha_air),"-",max(alpha_air)),
-    paste(min(phi),"-",max(phi)),
-    paste(min(epsilon_f),"-", max(epsilon_f)),
-    paste(min(v_f),"-", max(v_f))
+  c(paste(min(r_to_d),"-",max(r_to_d)," (",length(r_to_d),")"),
+    paste(min(v),"-",max(v)," (",length(v),")"),
+    paste(min(eta),"-",max(eta)," (",length(eta),")"),
+    paste(min(h_max_to_d),"-",max(h_max_to_d)," (",length(h_max_to_d),")"),
+    paste(min(K),"-",max(K)," (",length(K),")"),
+    paste(min(alpha_pump),"-",max(alpha_pump)," (",length(alpha_pump),")"),
+    paste(min(alpha_air),"-",max(alpha_air)," (",length(alpha_air),")"),
+    paste(min(phi),"-",max(phi)," (",length(phi),")"),
+    paste(min(epsilon_f),"-", max(epsilon_f)," (",length(epsilon_f),")"),
+    paste(min(v_f),"-", max(v_f)," (",length(v_f),")")
   )
 
 
@@ -102,6 +115,7 @@ table.df <-
     cbind(
       parameter,
       parameter_description,
+      technique,
       parameter_range
     )
   )
@@ -110,12 +124,12 @@ names(table.df) <-
   c(
     "Parameter",
     "Description",
-    "Range of Values Considered"
+    "Technique",
+    "Minimum - Maximum (No. Values)"
   )
 
 parameter_table <- 
     xtable(table.df,
-           caption = "OTE model parameters and range of values considered",
     sanitize.text.function = function(x) {
       x
     },
@@ -125,6 +139,35 @@ parameter_table <-
     latex.environments = "center"
   )
 
+#Export parameter table
+latex_parameter_table <- 
+  print.xtable(xtable(parameter_table),
+               print.results = FALSE,
+               sanitize.text.function = function(x) {x},
+               comment = FALSE,
+               include.rownames = FALSE,
+               floating = TRUE,
+               latex.environments = "center")
+
+writeLines(
+  c(
+    "\\documentclass[12pt]{standalone}",
+    "\\begin{document}",
+    latex_parameter_table,
+    "\\end{document}"
+  ),
+  "parameter_table.tex"
+)
+
+try(
+  texi2pdf("parameter_table.tex",
+           clean = TRUE),
+  silent = TRUE
+)
+
+#Move table output to the figures folder
+file.rename("parameter_table.tex", "figures/parameter_table.tex")
+file.rename("parameter_table.pdf", "figures/parameter_table.pdf")
 
 #----Calculate_OTE_downwelling----
 
