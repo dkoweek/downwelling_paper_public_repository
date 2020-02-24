@@ -1,6 +1,10 @@
+# Introduction
+
 This is the public data repository for:
 
-*Evaluating hypoxia alleviation through induced downwelling* (final citation to be updated after manuscript acceptance)
+[Evaluating hypoxia alleviation through induced downwelling](https://doi.org/10.1016/j.scitotenv.2020.137334)    
+David A. Koweek, Clara García-Sánchez, Philip G. Brodrick, Parker Gassett, and Ken Caldeira   
+*to appear in: Science of the Total Environment* (final citation to be updated)
 
 You can use this repository to reproduce any of the analyses in the paper. The analyses necessary to produce each figure are contained in the script under that figure's name. For instance, to reproduce figure 6 in the paper, simply run:
 
@@ -13,6 +17,8 @@ Necessary packages for each figure are defined at the beginning of each script. 
 The `data` folder contains data sets from the field experiment and the publicly available hydrocasts used for the oxygen transfer efficiency modeling. Calls to the data sets necessary to produce a given figure are found at the beginning of the script to produce that figure. 
 
 This repository contains several supporting scripts, many of which contain custom functions necessary to produce the analyses and figures. Again, these scripts are sourced at the beginning of the appropriate figure script.
+
+# Details
 
 Users interested in re-creating the experimental results (O<sub>2</sub>') in `Fig. 5` of the paper can run the `Python` script `generate_temporal_interpolations.py`
 
