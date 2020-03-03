@@ -2,9 +2,9 @@
 
 This is the public data repository for:
 
-[Evaluating hypoxia alleviation through induced downwelling](https://doi.org/10.1016/j.scitotenv.2020.137334)    
-David A. Koweek, Clara García-Sánchez, Philip G. Brodrick, Parker Gassett, and Ken Caldeira   
-*to appear in: Science of the Total Environment* (final citation to be updated)
+[David A. Koweek, Clara García-Sánchez, Philip G. Brodrick, Parker Gassett, and Ken Caldeira.
+Evaluating hypoxia alleviation through induced downwelling. Science of the Total Environment,
+719:137334, 2020.](https://doi.org/10.1016/j.scitotenv.2020.137334)    
 
 You can use this repository to reproduce any of the analyses in the paper. The analyses necessary to produce each figure are contained in the script under that figure's name. For instance, to reproduce figure 6 in the paper, simply run:
 
