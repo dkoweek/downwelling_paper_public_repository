@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/190090979.svg)](https://zenodo.org/badge/latestdoi/190090979)
+
 # Introduction
 
 This is the public data repository for:
